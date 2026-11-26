@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>WABB — Comparação</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .compare-page{max-width:1080px;margin:auto}.compare-head{padding:38px 0 25px}.compare-head h1{font-size:clamp(42px,7vw,72px);margin:10px 0}.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.compare-card{padding:24px;background:linear-gradient(145deg,#192734,#101820);border:1px solid #315064;border-radius:16px;box-shadow:0 18px 55px #0007}.compare-avatar{position:relative;width:86px;height:86px;border-radius:15px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(140deg,#ff8a3d,#703516);font:28px "Barlow Condensed";flex:none}.compare-avatar img{position:absolute;z-index:2;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}.compare-avatar span{position:absolute;z-index:1;inset:0;display:grid;place-items:center}.compare-player{display:flex;align-items:center;gap:14px;padding-bottom:20px;border-bottom:1px solid var(--line)}.compare-player h2{font-size:25px}.compare-stat{display:flex;justify-content:space-between;align-items:center;background:#0c141b;border:1px solid #263746;border-radius:9px;padding:12px 14px;margin-top:9px}.compare-stat span{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.7px}.compare-stat b{font-size:24px;color:var(--acc)}.compare-note{color:var(--mut);font-size:12px;margin-top:20px}.compare-error{text-align:center;padding:40px}.compare-loading{text-align:center;color:var(--mut);padding:50px}@media(max-width:700px){.compare-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header><a class="logo" href="/">WABB<small>What About Basketball</small></a><nav><a class="on" href="/">Comparação</a></nav><span class="tools">Observatório NBA</span></header>
+<main class="compare-page"><div class="crumb"><a href="/">← Voltar aos jogadores</a></div><section class="compare-head"><div class="eye">Comparação de jogadores</div><h1 class="big">Comparar jogadores</h1><div class="mut">Época mais recente · dados da NBA</div></section><div id="content" class="compare-loading">A carregar estatísticas...</div></main>
+<script>
+const API="/api";
+const q=new URLSearchParams(location.search);
+const slugs=(q.get("players")||"").split("|").filter(Boolean).slice(0,2);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+const d=v=>v==null?"—":Number(v).toFixed(1).replace(".",",");
+const pct=v=>v==null?"—":Number(v).toFixed(1).replace(".",",")+"%";
+const content=document.getElementById("content");
+async function load(){
+  if(slugs.length!==2){content.innerHTML='<div class="panel compare-error"><h2>Seleciona dois jogadores</h2><p class="mut">Volta à lista e usa o botão Comparar em dois jogadores.</p></div>';return}
+  try{
+    const players=await Promise.all(slugs.map(s=>fetch(API+"/players/"+encodeURIComponent(s)).then(r=>{if(!r.ok)throw Error("Jogador não encontrado");return r.json()})));
+    content.innerHTML='<div class="compare-grid">'+players.map(p=>{
+      const s=p.seasons?.[0]||{};
+      const initials=esc(p.name.split(" ").map(x=>x[0]).join("").slice(0,2));
+      const photoUrl=p.photo_url||((p.nba_id)?`https://cdn.nba.com/headshots/nba/latest/1040x760/${p.nba_id}.png`:"");
+      const avatar=photoUrl?`<img src="${esc(photoUrl)}" alt="Fotografia de ${esc(p.name)}" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><span>${initials}</span>`:`<span>${initials}</span>`;
+      return `<article class="compare-card"><div class="compare-player"><div class="compare-avatar">${avatar}</div><div><h2>${esc(p.name)}</h2><div class="mut">${esc(p.team||"")} · ${esc(p.position||"")}</div></div></div><div class="compare-stat"><span>Pontos / jogo</span><b>${d(s.pts)}</b></div><div class="compare-stat"><span>Ressaltos / jogo</span><b>${d(s.reb)}</b></div><div class="compare-stat"><span>Assistências / jogo</span><b>${d(s.ast)}</b></div><div class="compare-stat"><span>Lançamentos de campo</span><b>${pct(s.fg_pct)}</b></div><div class="compare-stat"><span>Triplos</span><b>${pct(s.tp_pct)}</b></div><div class="compare-note">${esc(s.season||"Época mais recente")} · médias por jogo</div></article>`;
+    }).join("")+"</div>";
+  }catch(e){content.innerHTML=`<div class="panel compare-error"><h2>Não foi possível carregar a comparação</h2><p class="mut">${esc(e.message)}</p></div>`}
+}
+load();
+</script>
+</body>
+</html>
