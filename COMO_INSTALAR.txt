@@ -1,0 +1,22 @@
+# Entrar na pasta do projeto
+cd D:\htdocs\14733\pap_wabb
+
+# Criar o ambiente virtual, caso ainda não exista
+if (!(Test-Path ".\.venv\Scripts\python.exe")) {
+    python -m venv .venv
+}
+
+# Atualizar o pip
+& ".\.venv\Scripts\python.exe" -m pip install --upgrade pip
+
+# Instalar as dependências
+& ".\.venv\Scripts\python.exe" -m pip install fastapi "uvicorn>=0.29" sqlalchemy pandas numpy plotly seaborn matplotlib nba_api httpx
+
+# Confirmar a versão do Python
+& ".\.venv\Scripts\python.exe" --version
+
+# Confirmar que estás na pasta backend
+cd D:\htdocs\14733\pap_wabb\backend
+
+# Iniciar o servidor
+& "D:\htdocs\14733\pap_wabb\.venv\Scripts\python.exe" -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
